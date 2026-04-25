@@ -188,7 +188,11 @@ gcloud run deploy code-service \
 ```
 
 `--allow-unauthenticated` is required because the browser calls it directly; access is gated by the bearer token in `API_KEY`. The CLI prints a `https://code-service-<hash>-<region>.a.run.app` URL — paste that into `CLOUD_RUN_URL` in your landing page `.env` and re-run `npm run build:firebase`.
+
+## get saved tokens
+
 to get saved tokens run 'curl -H `Authorization: Bearer $API_KEY" https://<your-cloud-run-url>/logs`   
+
 ### Other hosts
 
 Any platform that runs a container with HTTPS and an env var works (Fly, Render, ECS, a self-hosted box behind a reverse proxy). The image listens on `$PORT` and only needs `API_KEY` set.
