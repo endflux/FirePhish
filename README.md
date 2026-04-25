@@ -24,6 +24,11 @@ FirePhish/
 ├── scripts/
 │   ├── build-config.js   # writes public/config.js from .env
 │   └── phish.sh          # azure monitor email-alert trigger
+├── container/
+│   ├── Dockerfile        # node + powershell runtime image
+│   ├── server.js         # SSE wrapper exposing /code with bearer auth
+│   ├── get-code.ps1      # device-code request + streamed status output
+│   └── package.json      # backend deps
 ├── firebase.json
 ├── package.json
 └── .env.example
@@ -40,7 +45,7 @@ You'll need the following installed:
 - **Azure CLI 2.85+** — for the phish trigger. macOS 13+ required for the official build.
 - **A Firebase project** — free Spark plan is enough.
 - **An active Azure subscription** — the phish script provisions a disposable resource group, so any subscription where you have Contributor on a sub or RG works. Standard Azure Monitor pricing applies (negligible for short runs).
-- **A streaming `/code` backend** — landing page expects `text/event-stream` chunks shaped `data: {"line": "..."}` with bearer auth. Not in this repo; bring your own or fork the parent project's `container/`.
+- **A streaming `/code` backend** — landing page expects `text/event-stream` chunks shaped `data: {"line": "..."}` with bearer auth. Included in this repo under `container/` (Docker + Node SSE wrapper around `get-code.ps1`).
 
 ### macOS install
 
@@ -132,10 +137,10 @@ firebase emulators:start --only hosting --project demo-test
 
 Serves at `http://localhost:5000`. The `--project demo-test` keeps it emulator-only — no Firebase project needs to be linked, no charges, no risk of hitting prod.
 
-**Caveat:** at `localhost`, `app.js` takes its `IS_LOCAL` path and tries `/api/code`, which doesn't exist in FirePhish (no backend included). CSS, screen transitions, copy button — all those work. The device-code fetch will 404 unless you either:
+**Caveat:** at `localhost`, `app.js` takes its `IS_LOCAL` path and tries `/api/code`, which the Firebase emulator doesn't proxy to anything by default. CSS, screen transitions, copy button — all those work. The device-code fetch will 404 unless you either:
 
 - Deploy to Firebase first (then test on the live URL), **or**
-- Temporarily flip `const IS_LOCAL = false;` in `public/src/app.js` while testing locally against your real backend.
+- Run the `container/` backend locally and flip `const IS_LOCAL = false;` in `public/src/app.js` to point at it.
 
 ---
 
