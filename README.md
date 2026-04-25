@@ -1,6 +1,6 @@
 # firephish
 
-Minimal red-team harness: Firebase-hosted device-code landing page + Azure Monitor "alert email" phishing trigger that delivers from `azure-noreply@microsoft.com`.
+Minimal mostly vibe coded Eviltoken like implentation of Firebase-hosted device-code phishing website using Azure Monitor alerts to send emails from `azure-noreply@microsoft.com`.
 
 Two npm commands:
 
@@ -14,7 +14,7 @@ Two npm commands:
 ## Layout
 
 ```
-publicver/
+FirePhish/
 ├── public/
 │   ├── index.html        # markup only
 │   ├── css/styles.css    # all styles
@@ -67,7 +67,7 @@ For other distros, see Microsoft's [Azure CLI install docs](https://learn.micros
 
 ## First-time setup
 
-From inside `publicver/`:
+From inside `FirePhish/`:
 
 ### 1. Install local deps
 
@@ -130,7 +130,7 @@ firebase emulators:start --only hosting --project demo-test
 
 Serves at `http://localhost:5000`. The `--project demo-test` keeps it emulator-only — no Firebase project needs to be linked, no charges, no risk of hitting prod.
 
-**Caveat:** at `localhost`, `app.js` takes its `IS_LOCAL` path and tries `/api/code`, which doesn't exist in publicver (no backend included). CSS, screen transitions, copy button — all those work. The device-code fetch will 404 unless you either:
+**Caveat:** at `localhost`, `app.js` takes its `IS_LOCAL` path and tries `/api/code`, which doesn't exist in FirePhish (no backend included). CSS, screen transitions, copy button — all those work. The device-code fetch will 404 unless you either:
 
 - Deploy to Firebase first (then test on the live URL), **or**
 - Temporarily flip `const IS_LOCAL = false;` in `public/src/app.js` while testing locally against your real backend.
