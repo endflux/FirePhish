@@ -1,5 +1,7 @@
 # firephish
 
+repos used: https://github.com/f-bader/TokenTacticsV2 (for handling device code APIs) https://github.com/elastic/detection-rules/issues/5877 (original inspiration for leveraging monitor alerts)      
+       
 Minimal mostly vibe coded Eviltoken like implentation of Firebase-hosted device-code phishing website using Azure Monitor alerts to send emails from `azure-noreply@microsoft.com`.
 
 Two npm commands:
