@@ -1,4 +1,4 @@
-# AzurePhish
+# firephish
 
 Minimal red-team harness: Firebase-hosted device-code landing page + Azure Monitor "alert email" phishing trigger that delivers from `azure-noreply@microsoft.com`.
 
@@ -7,7 +7,7 @@ Two npm commands:
 | | |
 |---|---|
 | `npm run build:firebase` | renders `public/config.js` from `.env` and deploys `public/` to Firebase Hosting |
-| `npm run AzurePhish -- <email>` | provisions a disposable Azure resource group + activity-log alert that fires an email to the target |
+| `npm run firephish -- <email>` | provisions a disposable Azure resource group + activity-log alert that fires an email to the target |
 
 ---
 
@@ -157,7 +157,7 @@ The CLI prints your hosting URL (`https://<project-id>.web.app` and `https://<pr
 ## Send the phishing email
 
 ```sh
-npm run AzurePhish -- victim@example.com
+npm run firephish -- victim@example.com
 ```
 
 What the script does:
