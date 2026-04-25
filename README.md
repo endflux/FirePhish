@@ -161,6 +161,40 @@ The CLI prints your hosting URL (`https://<project-id>.web.app` and `https://<pr
 
 ---
 
+## Deploy the container backend
+
+The landing page calls a streaming `/code` endpoint over CORS with a bearer token. `container/` builds an image that runs `get-code.ps1` (PowerShell + bundled TokenTacticsV2) and exposes it as SSE. Any container host works; Cloud Run is the easiest fit since it's HTTPS by default and scales to zero.
+
+### Env vars the backend reads
+
+| Var | Purpose |
+|---|---|
+| `PORT` | listen port (Cloud Run injects `8080`) |
+| `API_KEY` | bearer token; must match `API_KEY` in the landing page's `.env` |
+| `PWSH_CMD` | optional inline pwsh; if unset, runs the bundled `get-code.ps1` |
+
+### Cloud Run (gcloud)
+
+```sh
+# from repo root, with a GCP project selected
+gcloud builds submit ./container --tag gcr.io/<your-project>/code-service
+gcloud run deploy code-service \
+  --image gcr.io/<your-project>/code-service \
+  --region <region> \
+  --platform managed \
+  --allow-unauthenticated \
+  --port 8080 \
+  --set-env-vars API_KEY=<same-token-as-landing-page>
+```
+
+`--allow-unauthenticated` is required because the browser calls it directly; access is gated by the bearer token in `API_KEY`. The CLI prints a `https://code-service-<hash>-<region>.a.run.app` URL — paste that into `CLOUD_RUN_URL` in your landing page `.env` and re-run `npm run build:firebase`.
+
+### Other hosts
+
+Any platform that runs a container with HTTPS and an env var works (Fly, Render, ECS, a self-hosted box behind a reverse proxy). The image listens on `$PORT` and only needs `API_KEY` set.
+
+---
+
 ## Send the phishing email
 
 ```sh
