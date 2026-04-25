@@ -4,13 +4,6 @@ repos used: https://github.com/f-bader/TokenTacticsV2 (for handling device code 
        
 Minimal mostly vibe coded Eviltoken like implentation of Firebase-hosted device-code phishing website using Azure Monitor alerts to send emails from `azure-noreply@microsoft.com`.
 
-Two npm commands:
-
-| | |
-|---|---|
-| `npm run build:firebase` | renders `public/config.js` from `.env` and deploys `public/` to Firebase Hosting |
-| `npm run firephish -- <email>` | provisions a disposable Azure resource group + activity-log alert that fires an email to the target |
-
 ---
 
 ## Layout
@@ -18,8 +11,8 @@ Two npm commands:
 ```
 FirePhish/
 ├── public/
-│   ├── index.html        # markup only
-│   ├── css/styles.css    # all styles
+│   ├── index.html        # html site
+│   ├── css/styles.css    # css styles
 │   └── src/app.js        # device-code stream handler + screen flow
 ├── scripts/
 │   ├── build-config.js   # writes public/config.js from .env
