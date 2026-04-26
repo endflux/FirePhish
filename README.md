@@ -293,7 +293,7 @@ Expected — see "Local testing" caveat above. Deploy or flip `IS_LOCAL` to bypa
 ## Examples
 
 action group email
-![Action group](image%20copy%203.png)
+![Action group](img/image%20copy%203.png)
 
 What the target sees in their inbox — sender is the legitimate `azure-noreply@microsoft.com`, signed and TLS-encrypted by `microsoft.com`:
 
