@@ -4,8 +4,15 @@
   "description": "Minimal Azure Monitor email-phishing harness with a Firebase-hosted landing page.",
   "private": true,
   "scripts": {
+    "setup:env": "cp -n .env.example .env && echo '→ edit .env now (API_KEY, GCP_PROJECT, GCP_REGION, LANDING_URL)'",
+    "login:firebase": "firebase login && firebase use --add",
+    "login:gcloud": "gcloud auth login && gcloud auth configure-docker",
+    "login:azure": "az login",
+    "deploy:container": "bash scripts/deploy-container.sh",
+    "deploy:firebase": "node scripts/build-config.js && firebase deploy --only hosting",
+    "deploy": "npm run deploy:container && npm run deploy:firebase",
     "build:firebase": "node scripts/build-config.js && firebase deploy --only hosting",
-    "AzurePhish": "bash scripts/phish.sh --e"
+    "phish": "bash scripts/phish.sh --e"
   },
   "devDependencies": {
     "dotenv": "^16.4.5"

